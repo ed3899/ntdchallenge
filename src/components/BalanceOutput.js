@@ -88,8 +88,8 @@ function transformData(accounts, journalEntries) {
         CREDIT: 0,
       };
     }
-    acc[account].DEBIT += entry.DEBIT;
-    acc[account].CREDIT += entry.CREDIT;
+    acc[account].DEBIT += parseInt(entry.DEBIT, 10);
+    acc[account].CREDIT += parseInt(entry.CREDIT, 10);
     return acc;
   }, {});
 
@@ -100,7 +100,7 @@ function transformData(accounts, journalEntries) {
       const balanceValue = debit - credit; // Assuming Debit increases balance, Credit decreases
 
       return {
-        ACCOUNT: accountNumber,
+        ACCOUNT: parseInt(accountNumber, 10),
         DESCRIPTION: accountLabels[parseInt(accountNumber, 10)] || "",
         DEBIT: debit,
         CREDIT: credit,
@@ -119,9 +119,12 @@ function filterJournalEntries(journalEntries, userInput) {
   const startDate = new Date(startPeriod);
   const endDate = new Date(endPeriod);
 
+  debugger
+
   return journalEntries.filter(entry => {
     const accountNumber = entry.ACCOUNT;
     const entryDate = entry.PERIOD;
+    debugger
 
     // Filter based on account range and period range (inclusive)
     return (
