@@ -112,12 +112,41 @@ function transformData(accounts, journalEntries) {
   return balance;
 }
 
+function filterJournalEntries(journalEntries, userInput) {
+  const {startAccount, endAccount, startPeriod, endPeriod} = userInput;
+
+  debugger;
+
+  // Convert startPeriod and endPeriod to Date objects if they are not already
+  const startDate = new Date(startPeriod);
+  const endDate = new Date(endPeriod);
+
+  return journalEntries.filter(entry => {
+    const accountNumber = entry.ACCOUNT;
+    const entryDate = entry.PERIOD;
+
+    // Filter based on account range and period range (inclusive)
+    return (
+      accountNumber >= startAccount &&
+      accountNumber <= endAccount &&
+      entryDate >= startDate &&
+      entryDate <= endDate
+    );
+  });
+}
+
 export default connect(state => {
   let balance = [];
   /* YOUR CODE GOES HERE */
   if (state.journalEntries.length > 0 && state.accounts.length > 0) {
-    balance = transformData(state.accounts, state.journalEntries);
+    const filteredEntries = filterJournalEntries(
+      state.journalEntries,
+      state.userInput
+    );
+    balance = transformData(state.accounts, filteredEntries);
   }
+
+  debugger;
 
   const totalCredit = balance.reduce((acc, entry) => acc + entry.CREDIT, 0);
   const totalDebit = balance.reduce((acc, entry) => acc + entry.DEBIT, 0);
