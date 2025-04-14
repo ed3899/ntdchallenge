@@ -115,8 +115,6 @@ function transformData(accounts, journalEntries) {
 function filterJournalEntries(journalEntries, userInput) {
   const {startAccount, endAccount, startPeriod, endPeriod} = userInput;
 
-  debugger;
-
   // Convert startPeriod and endPeriod to Date objects if they are not already
   const startDate = new Date(startPeriod);
   const endDate = new Date(endPeriod);
@@ -145,8 +143,6 @@ export default connect(state => {
     );
     balance = transformData(state.accounts, filteredEntries);
   }
-
-  debugger;
 
   const totalCredit = balance.reduce((acc, entry) => acc + entry.CREDIT, 0);
   const totalDebit = balance.reduce((acc, entry) => acc + entry.DEBIT, 0);
