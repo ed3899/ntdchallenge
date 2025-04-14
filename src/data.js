@@ -42,6 +42,7 @@ export const accounts = `ACCOUNT;LABEL;
 2110;Utilities Payables;
 3000;Common Stock;
 4000;Commercial Revenue;
+4120; Other;
 4090;Unearned Revenue;
 5000;Direct Labor;
 5100;Consultants;

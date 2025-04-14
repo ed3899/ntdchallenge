@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import * as utils from '../utils';
+import React, {Component} from "react";
+import PropTypes from "prop-types";
+import {connect} from "react-redux";
+import * as utils from "../utils";
 
 class BalanceOutput extends Component {
   render() {
@@ -10,22 +10,20 @@ class BalanceOutput extends Component {
     }
 
     return (
-      <div className='output'>
+      <div className="output">
         <p>
-          Total Debit: {this.props.totalDebit} Total Credit: {this.props.totalCredit}
+          Total Debit: {this.props.totalDebit} Total Credit:{" "}
+          {this.props.totalCredit}
           <br />
-          Balance from account {this.props.userInput.startAccount || '*'}
-          {' '}
-          to {this.props.userInput.endAccount || '*'}
-          {' '}
-          from period {utils.dateToString(this.props.userInput.startPeriod)}
-          {' '}
-          to {utils.dateToString(this.props.userInput.endPeriod)}
+          Balance from account {this.props.userInput.startAccount ||
+            "*"} to {this.props.userInput.endAccount || "*"} from period{" "}
+          {utils.dateToString(this.props.userInput.startPeriod)} to{" "}
+          {utils.dateToString(this.props.userInput.endPeriod)}
         </p>
-        {this.props.userInput.format === 'CSV' ? (
+        {this.props.userInput.format === "CSV" ? (
           <pre>{utils.toCSV(this.props.balance)}</pre>
         ) : null}
-        {this.props.userInput.format === 'HTML' ? (
+        {this.props.userInput.format === "HTML" ? (
           <table className="table">
             <thead>
               <tr>
@@ -61,7 +59,7 @@ BalanceOutput.propTypes = {
       DESCRIPTION: PropTypes.string.isRequired,
       DEBIT: PropTypes.number.isRequired,
       CREDIT: PropTypes.number.isRequired,
-      BALANCE: PropTypes.number.isRequired
+      BALANCE: PropTypes.number.isRequired,
     })
   ).isRequired,
   totalCredit: PropTypes.number.isRequired,
@@ -71,14 +69,55 @@ BalanceOutput.propTypes = {
     endAccount: PropTypes.number,
     startPeriod: PropTypes.date,
     endPeriod: PropTypes.date,
-    format: PropTypes.string
-  }).isRequired
+    format: PropTypes.string,
+  }).isRequired,
 };
+
+function transformData(accounts, journalEntries) {
+  const accountLabels = accounts.reduce((acc, account) => {
+    acc[account.ACCOUNT] = account.LABEL;
+    return acc;
+  }, {});
+
+  const aggregatedEntries = journalEntries.reduce((acc, entry) => {
+    const account = String(entry.ACCOUNT); // Ensure account is a string for the final output
+
+    if (!acc[account]) {
+      acc[account] = {
+        DEBIT: 0,
+        CREDIT: 0,
+      };
+    }
+    acc[account].DEBIT += entry.DEBIT;
+    acc[account].CREDIT += entry.CREDIT;
+    return acc;
+  }, {});
+
+  const balance = Object.entries(aggregatedEntries).map(
+    ([accountNumber, aggregated]) => {
+      const debit = aggregated.DEBIT;
+      const credit = aggregated.CREDIT;
+      const balanceValue = debit - credit; // Assuming Debit increases balance, Credit decreases
+
+      return {
+        ACCOUNT: accountNumber,
+        DESCRIPTION: accountLabels[parseInt(accountNumber, 10)] || "",
+        DEBIT: debit,
+        CREDIT: credit,
+        BALANCE: balanceValue,
+      };
+    }
+  );
+
+  return balance;
+}
 
 export default connect(state => {
   let balance = [];
-  state.jo
   /* YOUR CODE GOES HERE */
+  if (state.journalEntries.length > 0 && state.accounts.length > 0) {
+    balance = transformData(state.accounts, state.journalEntries);
+  }
 
   const totalCredit = balance.reduce((acc, entry) => acc + entry.CREDIT, 0);
   const totalDebit = balance.reduce((acc, entry) => acc + entry.DEBIT, 0);
@@ -87,6 +126,6 @@ export default connect(state => {
     balance,
     totalCredit,
     totalDebit,
-    userInput: state.userInput
+    userInput: state.userInput,
   };
 })(BalanceOutput);
