@@ -57,3 +57,65 @@ export const isValidDate = date => {
 export const isValidAccount = account => {
   return typeof account === "number" && account > 0;
 };
+
+export function resolveWildcardValues(userInput, accounts, journalEntries) {
+  const accountNumbers = accounts
+    .map(account => account.ACCOUNT)
+    .sort((a, b) => a - b);
+  const periods = journalEntries
+    .map(entry => entry.PERIOD)
+    .sort((a, b) => a - b);
+
+  return {
+    startAccount:
+      userInput.startAccount === "*"
+        ? accountNumbers[0]
+        : userInput.startAccount,
+    endAccount:
+      userInput.endAccount === "*"
+        ? accountNumbers[accountNumbers.length - 1]
+        : userInput.endAccount,
+    startPeriod:
+      userInput.startPeriod === "*" ? periods[0] : userInput.startPeriod,
+    endPeriod:
+      userInput.endPeriod === "*"
+        ? periods[periods.length - 1]
+        : userInput.endPeriod,
+    format: userInput.format,
+  };
+}
+
+export function filterJournalEntries(journalEntries, userInput, accounts) {
+  const resolvedInput = resolveWildcardValues(
+    userInput,
+    accounts,
+    journalEntries
+  );
+  const {startAccount, endAccount, startPeriod, endPeriod} = resolvedInput;
+
+  // Defensive checks for invalid inputs
+  if (
+    (startAccount !== "*" && !isValidAccount(startAccount)) ||
+    (endAccount !== "*" && !isValidAccount(endAccount)) ||
+    (startPeriod !== "*" && !isValidDate(new Date(startPeriod))) ||
+    (endPeriod !== "*" && !isValidDate(new Date(endPeriod)))
+  ) {
+    console.error("Invalid input detected:", resolvedInput);
+    return []; // Return an empty array if inputs are invalid, we could potentially display to validation UI for feedback
+  }
+
+  const startDate = new Date(startPeriod);
+  const endDate = new Date(endPeriod);
+
+  return journalEntries.filter(entry => {
+    const accountNumber = entry.ACCOUNT;
+    const entryDate = entry.PERIOD;
+
+    return (
+      accountNumber >= startAccount &&
+      accountNumber <= endAccount &&
+      entryDate >= startDate &&
+      entryDate <= endDate
+    );
+  });
+}
