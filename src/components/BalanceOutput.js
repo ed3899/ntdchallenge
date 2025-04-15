@@ -120,8 +120,6 @@ function resolveWildcardValues(userInput, accounts, journalEntries) {
     .map(entry => entry.PERIOD)
     .sort((a, b) => a - b);
 
-  debugger
-
   return {
     startAccount:
       userInput.startAccount === "*"
@@ -149,7 +147,16 @@ function filterJournalEntries(journalEntries, userInput, accounts) {
   );
   const {startAccount, endAccount, startPeriod, endPeriod} = resolvedInput;
 
-  debugger
+  // Defensive checks for invalid inputs
+  if (
+    (startAccount !== "*" && !utils.isValidAccount(startAccount)) ||
+    (endAccount !== "*" && !utils.isValidAccount(endAccount)) ||
+    (startPeriod !== "*" && !utils.isValidDate(new Date(startPeriod))) ||
+    (endPeriod !== "*" && !utils.isValidDate(new Date(endPeriod)))
+  ) {
+    console.error("Invalid input detected:", resolvedInput);
+    return []; // Return an empty array if inputs are invalid, we could potentially display to validation UI for feedback
+  }
 
   const startDate = new Date(startPeriod);
   const endDate = new Date(endPeriod);
@@ -178,8 +185,6 @@ export default connect(state => {
     );
     balance = transformData(state.accounts, filteredEntries);
   }
-
-  debugger
 
   const totalCredit = balance.reduce((acc, entry) => acc + entry.CREDIT, 0);
   const totalDebit = balance.reduce((acc, entry) => acc + entry.DEBIT, 0);
