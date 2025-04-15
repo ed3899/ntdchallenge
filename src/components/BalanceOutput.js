@@ -65,8 +65,8 @@ BalanceOutput.propTypes = {
   totalCredit: PropTypes.number.isRequired,
   totalDebit: PropTypes.number.isRequired,
   userInput: PropTypes.shape({
-    startAccount: PropTypes.number,
-    endAccount: PropTypes.number,
+    startAccount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    endAccount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     startPeriod: PropTypes.date,
     endPeriod: PropTypes.date,
     format: PropTypes.string,
@@ -112,21 +112,52 @@ function transformData(accounts, journalEntries) {
   return balance;
 }
 
-function filterJournalEntries(journalEntries, userInput) {
-  const {startAccount, endAccount, startPeriod, endPeriod} = userInput;
-
-  // Convert startPeriod and endPeriod to Date objects if they are not already
-  const startDate = new Date(startPeriod);
-  const endDate = new Date(endPeriod);
+function resolveWildcardValues(userInput, accounts, journalEntries) {
+  const accountNumbers = accounts
+    .map(account => account.ACCOUNT)
+    .sort((a, b) => a - b);
+  const periods = journalEntries
+    .map(entry => entry.PERIOD)
+    .sort((a, b) => a - b);
 
   debugger
+
+  return {
+    startAccount:
+      userInput.startAccount === "*"
+        ? accountNumbers[0]
+        : userInput.startAccount,
+    endAccount:
+      userInput.endAccount === "*"
+        ? accountNumbers[accountNumbers.length - 1]
+        : userInput.endAccount,
+    startPeriod:
+      userInput.startPeriod === "*" ? periods[0] : userInput.startPeriod,
+    endPeriod:
+      userInput.endPeriod === "*"
+        ? periods[periods.length - 1]
+        : userInput.endPeriod,
+    format: userInput.format,
+  };
+}
+
+function filterJournalEntries(journalEntries, userInput, accounts) {
+  const resolvedInput = resolveWildcardValues(
+    userInput,
+    accounts,
+    journalEntries
+  );
+  const {startAccount, endAccount, startPeriod, endPeriod} = resolvedInput;
+
+  debugger
+
+  const startDate = new Date(startPeriod);
+  const endDate = new Date(endPeriod);
 
   return journalEntries.filter(entry => {
     const accountNumber = entry.ACCOUNT;
     const entryDate = entry.PERIOD;
-    debugger
 
-    // Filter based on account range and period range (inclusive)
     return (
       accountNumber >= startAccount &&
       accountNumber <= endAccount &&
@@ -142,10 +173,13 @@ export default connect(state => {
   if (state.journalEntries.length > 0 && state.accounts.length > 0) {
     const filteredEntries = filterJournalEntries(
       state.journalEntries,
-      state.userInput
+      state.userInput,
+      state.accounts
     );
     balance = transformData(state.accounts, filteredEntries);
   }
+
+  debugger
 
   const totalCredit = balance.reduce((acc, entry) => acc + entry.CREDIT, 0);
   const totalDebit = balance.reduce((acc, entry) => acc + entry.DEBIT, 0);
